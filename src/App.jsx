@@ -1,11 +1,16 @@
 import React, { useState, useMemo } from "react";
+import { GLOSSARY as GLOSSARY_DB, TOOLS, CERTIFICATIONS, MITRE_TACTICS, CHEATSHEET, CAREER_PATHS } from "./cyberdb.js";
 
 /* ---------------------------------------------
    GHOSTWARE — cybersecurity learning hub
    Fully static: no API key, nothing to configure.
+   Glossary/Tools/Certs/MITRE/Cheatsheet/Careers all
+   live in src/cyberdb.js — edit that file to expand.
 ---------------------------------------------- */
 
-const GLOSSARY = [
+const GLOSSARY = GLOSSARY_DB.map((g) => [g.term, g.def]);
+
+const _OLD_GLOSSARY_UNUSED = [
   ["CIA Triad", "The three goals of security: Confidentiality, Integrity, Availability. Every control maps back to one of these."],
   ["Zero-day", "A vulnerability unknown to the vendor, with no patch available yet — actively dangerous because defenders can't fix what they don't know about."],
   ["Kerberoasting", "Requesting service tickets for Windows accounts with an SPN, then cracking the ticket offline to recover the account password."],
@@ -179,6 +184,74 @@ function useSearch(query) {
   }, [query]);
 }
 
+const LAUNCHERS = [
+  {
+    name: "ChatGPT",
+    note: "opens with your question pre-filled",
+    url: (q) => `https://chatgpt.com/?q=${encodeURIComponent(q)}`,
+    color: "#10a37f",
+  },
+  {
+    name: "Claude.ai",
+    note: "opens fresh — paste your question in",
+    url: () => `https://claude.ai/new`,
+    color: "#c1662f",
+  },
+  {
+    name: "Google",
+    note: "web search",
+    url: (q) => `https://www.google.com/search?q=${encodeURIComponent(q)}`,
+    color: "#4285f4",
+  },
+  {
+    name: "DuckDuckGo",
+    note: "private web search",
+    url: (q) => `https://duckduckgo.com/?q=${encodeURIComponent(q)}`,
+    color: "#de5833",
+  },
+  {
+    name: "MITRE ATT&CK",
+    note: "official attacker technique database",
+    url: (q) => `https://attack.mitre.org/search/?q=${encodeURIComponent(q)}`,
+    color: "#e8eaf0",
+  },
+];
+
+function LauncherRow({ query }) {
+  return (
+    <div style={{ marginTop: 10 }}>
+      <div style={{ fontSize: 12.5, color: "#9aa3b0", marginBottom: 10, lineHeight: 1.5 }}>
+        Not in the local glossary yet — send "<strong>{query}</strong>" to an AI or search engine instead:
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+        {LAUNCHERS.map((l) => (
+          <a
+            key={l.name}
+            href={l.url(query)}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              padding: "9px 14px",
+              borderRadius: 10,
+              border: "1px solid #262c38",
+              background: "#12161f",
+              textDecoration: "none",
+              minWidth: 130,
+            }}
+            className="gw-card"
+          >
+            <span style={{ fontSize: 13.5, fontWeight: 700, color: l.color }}>{l.name} ↗</span>
+            <span style={{ fontSize: 11, color: "#6b7280" }}>{l.note}</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function SearchIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -228,92 +301,51 @@ export default function Ghostware() {
     <div
       style={{
         minHeight: "100vh",
-        background: "#f6f7fa",
-        color: "#171a21",
+        background: "#0a0d12",
+        color: "#e8eaf0",
         fontFamily: "'Inter', -apple-system, sans-serif",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
       }}
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
         * { box-sizing: border-box; }
-        input::placeholder { color: #9aa1ae; }
-        .gw-nav-btn { transition: color .15s ease, background .15s ease; }
+        input::placeholder { color: #6b7280; }
         .gw-card { transition: box-shadow .15s ease, transform .15s ease; }
-        .gw-card:hover { box-shadow: 0 4px 18px rgba(23,26,33,0.08); transform: translateY(-1px); }
+        .gw-card:hover { box-shadow: 0 4px 18px rgba(0,0,0,0.35); transform: translateY(-1px); }
       `}</style>
 
-      {/* Top bar */}
-      <div style={{ borderBottom: "1px solid #e4e6ec", background: "#fff" }}>
-        <div style={{ maxWidth: 1040, margin: "0 auto", padding: "16px 24px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 7, background: "#2952e3", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <div style={{ width: 10, height: 10, borderRadius: "50%", border: "2px solid #fff" }} />
-            </div>
-            <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontWeight: 700, fontSize: 18, letterSpacing: -0.3 }}>
-              GHOSTWARE
-            </span>
-          </div>
-          <div style={{ display: "flex", gap: 4 }}>
-            {[
-              ["modules", "Learning Tracks"],
-              ["glossary", "Glossary"],
-              ["projects", "Project Ideas"],
-            ].map(([id, label]) => (
-              <button
-                key={id}
-                className="gw-nav-btn"
-                onClick={() => { setSection(id); setQuery(""); }}
-                style={{
-                  border: "none",
-                  background: section === id && !searching ? "#eef1fb" : "transparent",
-                  color: section === id && !searching ? "#2952e3" : "#5b6270",
-                  fontWeight: 600,
-                  fontSize: 13.5,
-                  padding: "8px 14px",
-                  borderRadius: 8,
-                  cursor: "pointer",
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Hero + search */}
-      <div style={{ maxWidth: 1040, margin: "0 auto", padding: "56px 24px 30px" }}>
+      <div style={{ maxWidth: 700, width: "100%", margin: "0 auto", padding: "14vh 24px 30px", textAlign: "center" }}>
         <h1
           style={{
             fontFamily: "'Space Grotesk', sans-serif",
-            fontSize: "clamp(34px, 5vw, 52px)",
+            fontSize: "clamp(34px, 6vw, 58px)",
             fontWeight: 700,
             letterSpacing: -1,
-            margin: "0 0 8px",
-            color: "#12151c",
+            margin: "0 0 26px",
+            color: "#f4f5f8",
           }}
         >
-          READY TO HACK<span style={{ color: "#2952e3" }}>.</span>
+          HACK THE WORLD<span style={{ color: "#39ff88" }}>.</span>
         </h1>
-        <p style={{ fontSize: 16, color: "#5b6270", margin: "0 0 26px", maxWidth: 560, lineHeight: 1.55 }}>
-          Ethical hacking and pen testing, Kali Linux and Windows, red team and blue team —
-          one place to learn the terms, the techniques, and what to build next.
-        </p>
 
         <div
           style={{
             display: "flex",
             alignItems: "center",
             gap: 10,
-            background: "#fff",
-            border: "1px solid #dde1ea",
+            background: "#12161f",
+            border: "1px solid #262c38",
             borderRadius: 12,
             padding: "13px 16px",
-            boxShadow: "0 1px 2px rgba(23,26,33,0.04)",
-            maxWidth: 620,
+            maxWidth: 560,
+            margin: "0 auto",
           }}
         >
-          <span style={{ color: "#9aa1ae" }}>
+          <span style={{ color: "#6b7280" }}>
             <SearchIcon />
           </span>
           <input
@@ -324,15 +356,16 @@ export default function Ghostware() {
               flex: 1,
               border: "none",
               outline: "none",
+              background: "transparent",
               fontSize: 14.5,
               fontFamily: "'Inter', sans-serif",
-              color: "#171a21",
+              color: "#e8eaf0",
             }}
           />
           {query && (
             <button
               onClick={() => setQuery("")}
-              style={{ border: "none", background: "none", color: "#9aa1ae", cursor: "pointer", fontSize: 13 }}
+              style={{ border: "none", background: "none", color: "#6b7280", cursor: "pointer", fontSize: 13 }}
             >
               clear
             </button>
@@ -340,20 +373,12 @@ export default function Ghostware() {
         </div>
       </div>
 
-      {/* Content */}
-      <div style={{ maxWidth: 1040, margin: "0 auto", padding: "0 24px 60px" }}>
-        {searching ? (
-          <SearchResults results={results} />
-        ) : section === "modules" ? (
-          <ModulesView tracks={tracks} />
-        ) : section === "glossary" ? (
-          <GlossaryView />
-        ) : (
-          <ProjectsView />
-        )}
+      {/* Content — only appears while actively searching */}
+      <div style={{ maxWidth: 1040, width: "100%", margin: "0 auto", padding: "0 24px 60px" }}>
+        {searching && <SearchResults results={results} query={query} />}
       </div>
 
-      <div style={{ borderTop: "1px solid #e4e6ec", padding: "20px 24px", textAlign: "center", fontSize: 12.5, color: "#9aa1ae" }}>
+      <div style={{ borderTop: "1px solid #1c2128", padding: "20px 24px", textAlign: "center", fontSize: 12.5, color: "#9aa3b0", width: "100%" }}>
         For authorized lab use — your own VMs, HTB, TryHackMe. Never systems you don't own or have permission to test.
       </div>
     </div>
@@ -365,17 +390,17 @@ function ModulesView({ tracks }) {
     <div>
       {Object.entries(tracks).map(([track, mods]) => (
         <div key={track} style={{ marginBottom: 34 }}>
-          <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 15, fontWeight: 600, color: "#5b6270", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 0.5 }}>
+          <h2 style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 15, fontWeight: 600, color: "#9aa3b0", margin: "0 0 12px", textTransform: "uppercase", letterSpacing: 0.5 }}>
             {track}
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
             {mods.map((m) => (
-              <div key={m.id} className="gw-card" style={{ background: "#fff", border: "1px solid #e4e6ec", borderRadius: 12, padding: 18 }}>
+              <div key={m.id} className="gw-card" style={{ background: "#12161f", border: "1px solid #262c38", borderRadius: 12, padding: 18 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                  <h3 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: "#171a21" }}>{m.title}</h3>
+                  <h3 style={{ margin: 0, fontSize: 15.5, fontWeight: 700, color: "#e8eaf0" }}>{m.title}</h3>
                   <TagPill tag={m.tag} />
                 </div>
-                <p style={{ margin: 0, fontSize: 13.5, color: "#5b6270", lineHeight: 1.6 }}>{m.body}</p>
+                <p style={{ margin: 0, fontSize: 13.5, color: "#9aa3b0", lineHeight: 1.6 }}>{m.body}</p>
               </div>
             ))}
           </div>
@@ -389,11 +414,99 @@ function GlossaryView() {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
       {GLOSSARY.map(([term, def]) => (
-        <div key={term} className="gw-card" style={{ background: "#fff", border: "1px solid #e4e6ec", borderRadius: 10, padding: "14px 16px" }}>
+        <div key={term} className="gw-card" style={{ background: "#12161f", border: "1px solid #262c38", borderRadius: 10, padding: "14px 16px" }}>
           <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 500, fontSize: 13.5, color: "#2952e3", marginBottom: 4 }}>
             {term}
           </div>
-          <div style={{ fontSize: 13, color: "#5b6270", lineHeight: 1.55 }}>{def}</div>
+          <div style={{ fontSize: 13, color: "#9aa3b0", lineHeight: 1.55 }}>{def}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ToolsView() {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
+      {TOOLS.map((t) => (
+        <div key={t.name} className="gw-card" style={{ background: "#12161f", border: "1px solid #262c38", borderRadius: 10, padding: "14px 16px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+            <span style={{ fontWeight: 700, fontSize: 14 }}>{t.name}</span>
+            <span style={{ fontSize: 10.5, color: "#6b7280" }}>{t.platform}</span>
+          </div>
+          <div style={{ fontSize: 11, color: "#2952e3", fontWeight: 600, marginBottom: 6 }}>{t.category}</div>
+          <div style={{ fontSize: 13, color: "#9aa3b0", lineHeight: 1.55 }}>{t.desc}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MitreView() {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
+      {MITRE_TACTICS.map((m, i) => (
+        <div key={m.tactic} className="gw-card" style={{ background: "#12161f", border: "1px solid #262c38", borderRadius: 12, padding: 18 }}>
+          <div style={{ fontSize: 11, color: "#6b7280", fontWeight: 600, marginBottom: 6 }}>{String(i + 1).padStart(2, "0")}</div>
+          <h3 style={{ margin: "0 0 6px", fontSize: 15.5, fontWeight: 700 }}>{m.tactic}</h3>
+          <p style={{ margin: "0 0 8px", fontSize: 13.5, color: "#9aa3b0", lineHeight: 1.6 }}>{m.desc}</p>
+          <div style={{ fontSize: 12, color: "#b45a12" }}>e.g. {m.example}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CheatsheetView() {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      {Object.entries(CHEATSHEET).map(([os, cmds]) => (
+        <div key={os}>
+          <h2 style={{ fontSize: 13, fontWeight: 700, color: "#9aa3b0", textTransform: "uppercase", letterSpacing: 0.5, margin: "0 0 10px" }}>
+            {os}
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {cmds.map((c) => (
+              <div key={c.cmd} style={{ background: "#12161f", border: "1px solid #262c38", borderRadius: 8, padding: "10px 12px" }}>
+                <code style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5, color: "#e8eaf0", display: "block", marginBottom: 4, wordBreak: "break-all" }}>
+                  {c.cmd}
+                </code>
+                <div style={{ fontSize: 12, color: "#9aa3b0" }}>{c.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CertsView() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {CERTIFICATIONS.map((c) => (
+        <div key={c.name} className="gw-card" style={{ background: "#12161f", border: "1px solid #262c38", borderRadius: 12, padding: 16, display: "flex", gap: 16, alignItems: "flex-start" }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "#2952e3", background: "#eef1fb", padding: "4px 10px", borderRadius: 20, whiteSpace: "nowrap" }}>
+            {c.stage}
+          </span>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 14.5, marginBottom: 3 }}>{c.name}</div>
+            <div style={{ fontSize: 13, color: "#9aa3b0", lineHeight: 1.55 }}>{c.desc}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CareersView() {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
+      {CAREER_PATHS.map((c) => (
+        <div key={c.role} className="gw-card" style={{ background: "#12161f", border: "1px solid #262c38", borderRadius: 12, padding: 18 }}>
+          <h3 style={{ margin: "0 0 6px", fontSize: 15.5, fontWeight: 700 }}>{c.role}</h3>
+          <p style={{ margin: "0 0 8px", fontSize: 13.5, color: "#9aa3b0", lineHeight: 1.6 }}>{c.desc}</p>
+          <div style={{ fontSize: 12, color: "#177a63" }}>Skills: {c.skills}</div>
         </div>
       ))}
     </div>
@@ -404,33 +517,41 @@ function ProjectsView() {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
       {PROJECTS.map(([title, desc], i) => (
-        <div key={title} className="gw-card" style={{ background: "#fff", border: "1px solid #e4e6ec", borderRadius: 12, padding: 18 }}>
-          <div style={{ fontSize: 11, color: "#9aa1ae", fontWeight: 600, marginBottom: 6 }}>PROJECT {String(i + 1).padStart(2, "0")}</div>
-          <h3 style={{ margin: "0 0 6px", fontSize: 15.5, fontWeight: 700, color: "#171a21" }}>{title}</h3>
-          <p style={{ margin: 0, fontSize: 13.5, color: "#5b6270", lineHeight: 1.6 }}>{desc}</p>
+        <div key={title} className="gw-card" style={{ background: "#12161f", border: "1px solid #262c38", borderRadius: 12, padding: 18 }}>
+          <div style={{ fontSize: 11, color: "#6b7280", fontWeight: 600, marginBottom: 6 }}>PROJECT {String(i + 1).padStart(2, "0")}</div>
+          <h3 style={{ margin: "0 0 6px", fontSize: 15.5, fontWeight: 700, color: "#e8eaf0" }}>{title}</h3>
+          <p style={{ margin: 0, fontSize: 13.5, color: "#9aa3b0", lineHeight: 1.6 }}>{desc}</p>
         </div>
       ))}
     </div>
   );
 }
 
-function SearchResults({ results }) {
+function SearchResults({ results, query }) {
   const total = results.glossary.length + results.modules.length + results.projects.length;
   if (total === 0) {
-    return <p style={{ color: "#9aa1ae", fontSize: 14 }}>No matches. Try a different term.</p>;
+    return (
+      <div>
+        <p style={{ color: "#6b7280", fontSize: 14, marginBottom: 4 }}>No local matches for "{query}".</p>
+        <LauncherRow query={query} />
+      </div>
+    );
   }
   return (
     <div>
+      <div style={{ marginBottom: 22, paddingBottom: 18, borderBottom: "1px solid #e4e6ec" }}>
+        <LauncherRow query={query} />
+      </div>
       {results.glossary.length > 0 && (
         <div style={{ marginBottom: 28 }}>
-          <h2 style={{ fontSize: 13, fontWeight: 700, color: "#5b6270", textTransform: "uppercase", letterSpacing: 0.5, margin: "0 0 10px" }}>
+          <h2 style={{ fontSize: 13, fontWeight: 700, color: "#9aa3b0", textTransform: "uppercase", letterSpacing: 0.5, margin: "0 0 10px" }}>
             Glossary — {results.glossary.length}
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
             {results.glossary.map(([term, def]) => (
-              <div key={term} className="gw-card" style={{ background: "#fff", border: "1px solid #e4e6ec", borderRadius: 10, padding: "14px 16px" }}>
+              <div key={term} className="gw-card" style={{ background: "#12161f", border: "1px solid #262c38", borderRadius: 10, padding: "14px 16px" }}>
                 <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontWeight: 500, fontSize: 13.5, color: "#2952e3", marginBottom: 4 }}>{term}</div>
-                <div style={{ fontSize: 13, color: "#5b6270", lineHeight: 1.55 }}>{def}</div>
+                <div style={{ fontSize: 13, color: "#9aa3b0", lineHeight: 1.55 }}>{def}</div>
               </div>
             ))}
           </div>
@@ -438,17 +559,17 @@ function SearchResults({ results }) {
       )}
       {results.modules.length > 0 && (
         <div style={{ marginBottom: 28 }}>
-          <h2 style={{ fontSize: 13, fontWeight: 700, color: "#5b6270", textTransform: "uppercase", letterSpacing: 0.5, margin: "0 0 10px" }}>
+          <h2 style={{ fontSize: 13, fontWeight: 700, color: "#9aa3b0", textTransform: "uppercase", letterSpacing: 0.5, margin: "0 0 10px" }}>
             Learning Tracks — {results.modules.length}
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
             {results.modules.map((m) => (
-              <div key={m.id} className="gw-card" style={{ background: "#fff", border: "1px solid #e4e6ec", borderRadius: 12, padding: 18 }}>
+              <div key={m.id} className="gw-card" style={{ background: "#12161f", border: "1px solid #262c38", borderRadius: 12, padding: 18 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                   <h3 style={{ margin: 0, fontSize: 15.5, fontWeight: 700 }}>{m.title}</h3>
                   <TagPill tag={m.tag} />
                 </div>
-                <p style={{ margin: 0, fontSize: 13.5, color: "#5b6270", lineHeight: 1.6 }}>{m.body}</p>
+                <p style={{ margin: 0, fontSize: 13.5, color: "#9aa3b0", lineHeight: 1.6 }}>{m.body}</p>
               </div>
             ))}
           </div>
@@ -456,14 +577,14 @@ function SearchResults({ results }) {
       )}
       {results.projects.length > 0 && (
         <div>
-          <h2 style={{ fontSize: 13, fontWeight: 700, color: "#5b6270", textTransform: "uppercase", letterSpacing: 0.5, margin: "0 0 10px" }}>
+          <h2 style={{ fontSize: 13, fontWeight: 700, color: "#9aa3b0", textTransform: "uppercase", letterSpacing: 0.5, margin: "0 0 10px" }}>
             Project Ideas — {results.projects.length}
           </h2>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 14 }}>
             {results.projects.map(([title, desc]) => (
-              <div key={title} className="gw-card" style={{ background: "#fff", border: "1px solid #e4e6ec", borderRadius: 12, padding: 18 }}>
+              <div key={title} className="gw-card" style={{ background: "#12161f", border: "1px solid #262c38", borderRadius: 12, padding: 18 }}>
                 <h3 style={{ margin: "0 0 6px", fontSize: 15.5, fontWeight: 700 }}>{title}</h3>
-                <p style={{ margin: 0, fontSize: 13.5, color: "#5b6270", lineHeight: 1.6 }}>{desc}</p>
+                <p style={{ margin: 0, fontSize: 13.5, color: "#9aa3b0", lineHeight: 1.6 }}>{desc}</p>
               </div>
             ))}
           </div>
